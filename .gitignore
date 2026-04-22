@@ -1,0 +1,18 @@
+# Environments
+venv/
+env/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Mac OS Files
+.DS_Store
+
+# Scraped Data
+market_data_export.csv
+*.csv
+
+# Environment Variables (if you add API keys later)
+.env

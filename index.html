@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipeline Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 50px 20px;
+            margin: 0;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 { margin: 0 0 10px 0; font-weight: 800; font-size: 2.5rem; }
+        p { color: var(--text-muted); margin: 0; }
+
+        /* Search Box styling */
+        .search-box {
+            display: flex;
+            gap: 10px;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+        }
+
+        input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus { border-color: var(--accent); }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover { background-color: var(--accent-hover); transform: translateY(-2px); }
+
+        /* Loader Animation */
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Results Grid */
+        .results-container { display: none; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .status-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .card.full-width { grid-column: 1 / -1; }
+        .card h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .card .value { font-size: 1.5rem; font-weight: 600; word-break: break-word; }
+        
+        .heading-list { list-style: none; padding: 0; margin: 0; }
+        .heading-list li { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .heading-list li:last-child { border-bottom: none; }
+
+        .error-message { color: var(--danger); text-align: center; padding: 20px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header">
+        <h1>Extraction Engine</h1>
+        <p>Automated Web Scraping & Data Pipeline Dashboard</p>
+    </div>
+
+    <div class="search-box">
+        <input type="url" id="urlInput" placeholder="Paste target URL here (e.g., https://en.wikipedia.org/...)" required>
+        <button onclick="startScraping()">Extract Data</button>
+    </div>
+
+    <div id="loader" class="loader">
+        <div class="spinner"></div>
+        <div style="color: var(--text-muted);">Bypassing security and mapping DOM...</div>
+    </div>
+
+    <div id="error" class="error-message"></div>
+
+    <div id="results" class="results-container">
+        <div class="status-badge">✓ Data Successfully Exported to CSV</div>
+        
+        <div class="grid">
+            <div class="card full-width">
+                <h3>Page Title</h3>
+                <div class="value" id="res-title">-</div>
+            </div>
+            
+            <div class="card">
+                <h3>Total Internal Links</h3>
+                <div class="value" style="color: var(--accent); font-size: 2rem;" id="res-links">0</div>
+            </div>
+
+            <div class="card">
+                <h3>Target URL Validated</h3>
+                <div class="value" style="font-size: 1rem; color: var(--text-muted);" id="res-url">-</div>
+            </div>
+
+            <div class="card full-width">
+                <h3>Top Extracted Headings</h3>
+                <ul class="heading-list" id="res-headings">
+                    </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function startScraping() {
+        const url = document.getElementById('urlInput').value;
+        const loader = document.getElementById('loader');
+        const results = document.getElementById('results');
+        const errorDiv = document.getElementById('error');
+
+        if (!url) { alert("Please enter a URL."); return; }
+
+        // Hide old results/errors and show loader
+        results.style.display = 'none';
+        errorDiv.style.display = 'none';
+        loader.style.display = 'block';
+
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/scrape', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            });
+
+            const data = await response.json();
+            loader.style.display = 'none';
+
+            if (response.ok) {
+                // Populate the UI cards
+                document.getElementById('res-title').textContent = data.title;
+                document.getElementById('res-links').textContent = data.total_links;
+                document.getElementById('res-url').textContent = data.url;
+
+                // Build the list of headings
+                const headingsList = document.getElementById('res-headings');
+                headingsList.innerHTML = ''; // Clear old headings
+                data.top_headings.forEach(heading => {
+                    const li = document.createElement('li');
+                    li.textContent = heading;
+                    headingsList.appendChild(li);
+                });
+
+                // Show the beautifully formatted results
+                results.style.display = 'block';
+            } else {
+                errorDiv.textContent = "Error: " + data.error;
+                errorDiv.style.display = 'block';
+            }
+        } catch (error) {
+            loader.style.display = 'none';
+            errorDiv.textContent = "Failed to connect to backend. Is your Flask server running?";
+            errorDiv.style.display = 'block';
+        }
+    }
+</script>
+
+</body>
+</html>
